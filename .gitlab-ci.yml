@@ -1,0 +1,15 @@
+default:
+  image: python:3.7
+
+
+stages:
+  - test
+
+
+tests:
+  stage: test
+  script:
+    - pip list
+    - pip install '.[test]'
+    - pip list
+    - pytest -v
