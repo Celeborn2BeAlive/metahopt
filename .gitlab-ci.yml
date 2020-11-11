@@ -12,4 +12,6 @@ tests:
     - pip list
     - pip install '.[test]'
     - pip list
-    - pytest -v
+    - PKG_LOCATION=$(python -c "import os, metahopt; print(os.path.dirname(metahopt.__file__))")
+    - pytest -v --cov "$PKG_LOCATION" --cov-report term tests
+  coverage: '/TOTAL.+ ([0-9]{1,3}%)/'
