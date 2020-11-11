@@ -17,42 +17,33 @@ def test_clean_score_params(mocker):
     rng_seed = mocker.sentinel.rng_seed
 
     # All default
-    assert _clean_score_params(solutions, None, None, None, False, rng_seed) == (
-        solutions,
-        None,
-        None,
-    )
+    res = _clean_score_params(solutions, None, None, None, False, rng_seed)
+    assert res == (solutions, None, None)
+
     # With max_time
-    assert _clean_score_params(solutions, 12, None, None, False, rng_seed) == (
-        solutions,
-        12,
-        None,
-    )
+    res = _clean_score_params(solutions, 12, None, None, False, rng_seed)
+    assert res == (solutions, 12, None)
+
     # With max_eval
-    assert _clean_score_params(solutions, None, 2, None, False, rng_seed) == (
-        solutions,
-        None,
-        2,
-    )
+    res = _clean_score_params(solutions, None, 2, None, False, rng_seed)
+    assert res == (solutions, None, 2)
+
     # With max_eval_ratio
-    assert _clean_score_params([0, 1], None, None, 0.5, False, rng_seed) == (
-        [0, 1],
-        None,
-        1,
-    )
+    res = _clean_score_params([0, 1], None, None, 0.5, False, rng_seed)
+    assert res == ([0, 1], None, 1)
+
     # With max_eval and max_eval_ratio
     sols = range(10)
-    assert _clean_score_params(sols, None, 2, 0.5, False, rng_seed) == (
-        sols,
-        None,
-        2,
-    )
+    res = _clean_score_params(sols, None, 2, 0.5, False, rng_seed)
+    assert res == (sols, None, 2)
+
     # With max_eval, max_eval_ratio and an empty solution set
     assert _clean_score_params([], None, 2, 0.5, False, rng_seed) == ([], None, 0)
 
     # Random order
     m_default_rng = mocker.patch("numpy.random.default_rng")
-    assert _clean_score_params(solutions, None, None, None, True, rng_seed) == (
+    res = _clean_score_params(solutions, None, None, None, True, rng_seed)
+    assert res == (
         m_default_rng.return_value.permutation.return_value,
         None,
         None,
