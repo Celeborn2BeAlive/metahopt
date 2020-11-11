@@ -43,11 +43,7 @@ def test_clean_score_params(mocker):
     # Random order
     m_default_rng = mocker.patch("numpy.random.default_rng")
     res = _clean_score_params(solutions, None, None, None, True, rng_seed)
-    assert res == (
-        m_default_rng.return_value.permutation.return_value,
-        None,
-        None,
-    )
+    assert res == (m_default_rng.return_value.permutation.return_value, None, None)
     m_default_rng.assert_called_once_with(rng_seed)
     m_default_rng.return_value.permutation.assert_called_once_with(solutions)
 
