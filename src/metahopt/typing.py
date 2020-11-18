@@ -1,4 +1,4 @@
-from typing import TypeVar, Union
+from typing import Callable, Iterable, TypeVar, Union
 
 import numpy as np
 from numpy.random import BitGenerator, Generator, SeedSequence
@@ -10,4 +10,6 @@ ArrayLike = TypeVar("ArrayLike", np.ndarray, list, tuple)
 Scalar = TypeVar("Scalar", int, float)
 SolutionType = TypeVar("SolutionType")
 
-RngSeedType = Union[None, int, ArrayLike, SeedSequence, BitGenerator, Generator]
+ScoreFunc = Callable[[SolutionType], float]
+VectorizedScoreFunc = Callable[[Iterable[SolutionType]], Iterable[float]]
+RngSeed = Union[None, int, ArrayLike, SeedSequence, BitGenerator, Generator]

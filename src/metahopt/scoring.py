@@ -3,23 +3,30 @@ from enum import Enum
 import logging
 import math
 from time import process_time
-from typing import Callable, Collection, Iterable, Optional, Union
+from typing import Collection, Iterable, Optional, Union
 
 import numpy as np
 
-from metahopt.typing import RngSeedType, SolutionType
+from metahopt.typing import RngSeed, ScoreFunc, SolutionType, VectorizedScoreFunc
 
 
-@dataclass
 class ScoringStopReason(Enum):
+    """Indicates the reason a scoring function terminated."""
+
+    #: The complete solution set was processed.
     ScanComplete = 0
+    #: The time limit was reached while scanning the solution set.
     MaxTime = 1
+    #: The maximum number of calls to the scoring function was reached.
     MaxEval = 2
+    #: A solution with a better score than the specified limit was found.
     ScoreImprovement = 3
 
 
-@dataclass
+@dataclass(frozen=True)
 class ScoringResults:
+    """Results returned by a scoring function."""
+
     score: float
     solution: Optional[SolutionType]
     solution_index: Optional[int]
@@ -35,18 +42,31 @@ def _clean_score_params(
     max_eval: Optional[int],
     max_eval_ratio: Optional[float],
     random_order: bool,
-    rng_seed: RngSeedType,
+    rng_seed: RngSeed,
 ) -> (Iterable[SolutionType], Optional[float], Optional[int]):
-    """
-    If using max_eval_ratio, solutions needs to be sized.
+    """Validate and prepare the parameters of score_solutions().
 
     Args:
-        max_eval:
-        max_eval_ratio:
-        solutions:
+        solutions (iterable of SolutionType): Solution set to be scored. Unless
+            `max_eval_ratio` or `random_order` are specified, the only requirement is
+            for `solutions` to be iterable. Solutions will be generated only once at
+            scoring time.
+        max_time (float or None): Maximum time allowed for scoring the solution set. If
+            the time limit is reached while evaluating a solution, the scoring will be
+            stopped only after this evaluation terminates.
+        max_eval (int or None): Maximum number of scoring function calls. Unlimited if
+            None.
+        max_eval_ratio (float or None): Limits the number of solutions evaluated to a
+            ratio of the solution set. Must be in ]0, 1]. Unlimited if None. If
+            specified, `solutions` must be sized (needs to have a `len()`).
+        random_order (bool): If True, the solution set is shuffled. This triggers the
+            generation of the complete solution set if it is a generator.
+        rng_seed (RngSeed): Random seed or generator to be used for shuffling
+            `solutions` if `random_order` is True.
 
     Returns:
-        float or None, int or None: max_time and max_eval
+        iterable of SolutionType, float or None, int or None: Validated and prepared
+        values for `solutions`, `max_time` and `max_eval`.
     """
     if max_time is not None and max_time <= 0.0:
         raise ValueError(f"max_time={max_time}, must be greater than 0")
@@ -72,33 +92,43 @@ def _clean_score_params(
 
 
 def score_solutions(
-    score_func: Callable[[SolutionType], float],
+    score_func: ScoreFunc,
     solutions: Iterable[SolutionType],
     max_time: Optional[float] = None,
     max_eval: Optional[int] = None,
     max_eval_ratio: Optional[float] = None,
     stop_score: Optional[float] = None,
     random_order: bool = False,
-    rng_seed: RngSeedType = None,
+    rng_seed: RngSeed = None,
 ) -> ScoringResults:
-    """
+    """Evaluate all solutions in a collection iteratively.
 
     Args:
-        score_func:
-        solutions (Iterable): The collection of solutions to scan and evaluate.
-            If `randomize` is True, the collection is turned into a list,
-            materializing it if it is a generator. If `max_eval_ratio` is True, the
-            collection must be sized (can be used with `len()`).
-        max_time:
-        max_eval:
-        max_eval_ratio:
-        stop_score:
-        random_order:
-        rng_seed:
+        score_func (ScoreFunc): Objective function for evaluating solutions
+            individually.
+        solutions (iterable of SolutionType): Solution set to evaluate. Unless
+            `max_eval_ratio` or `random_order` are specified, the only requirement is
+            for `solutions` to be iterable. Solutions will be generated only once at
+            scoring time.
+        max_time (float or None, optional, default None): Maximum time allowed for
+            scoring the solution set. If the time limit is reached while evaluating a
+            solution, the scoring will be stopped only after this evaluation terminates.
+        max_eval (int or None, optional, default None): Maximum number of scoring
+            function calls. Unlimited if None.
+        max_eval_ratio (float or None, optional, default None): Limits the number of
+            solutions evaluated to a ratio of the solution set. Must be in ]0, 1].
+            Unlimited if None. If specified, `solutions` must be sized (needs to have a
+            `len()`).
+        stop_score (float, optional, default None): Stops the scoring as soon as a
+            better solution is found. No score limit if None.
+        random_order (bool, optional, default False): If True, the solution set is
+            shuffled. This triggers the generation of the complete solution set if it
+            is a generator.
+        rng_seed (RngSeed, optional, default None): Random seed or generator to be used
+            for shuffling `solutions` if `random_order` is True.
 
     Returns:
-        tuple of (float, SolutionType): The best score and the corresponding
-        solution found while scanning the collection.
+        ScoringResults: The results of scoring the solution set.
     """
     logger = logging.getLogger("metahopt.scoring")
     logger.debug("Scoring solution set")
@@ -149,25 +179,25 @@ def score_solutions(
 
 
 def score_vectorized(
-    score_func: Callable[[Iterable[SolutionType]], Iterable[SolutionType]],
+    score_func: VectorizedScoreFunc,
     solutions: Iterable[SolutionType],
     random_order: bool = False,
-    rng_seed: RngSeedType = None,
+    rng_seed: RngSeed = None,
 ) -> ScoringResults:
-    """
+    """Evaluate all solutions in a collection with a vectorized objective function.
 
     Args:
-        score_func:
-        solutions (Iterable): The collection of solutions to scan and evaluate.
-            If `randomize` is True, the collection is turned into a list,
-            materializing it if it is a generator. If `max_eval_ratio` is True, the
-            collection must be sized (can be used with `len()`).
-        random_order:
-        rng_seed:
+        score_func (VectorizedScoreFunc): Vectorized objective function for evaluating
+            a collection of solutions in a single call.
+        solutions (iterable of SolutionType): Solution set to evaluate.
+        random_order (bool, optional, default False): If True, the solution set is
+            shuffled. This triggers the generation of the complete solution set if it
+            is a generator.
+        rng_seed (RngSeed, optional, default None): Random seed or generator to be used
+            for shuffling `solutions` if `random_order` is True.
 
     Returns:
-        tuple of (float, SolutionType): The best score and the corresponding
-        solution found while scanning the collection.
+        ScoringResults: The results of scoring the solution set.
     """
     logger = logging.getLogger("metahopt.scoring")
     logger.debug("Scoring vectorized solution set")
