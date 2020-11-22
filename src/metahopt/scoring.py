@@ -3,11 +3,17 @@ from enum import Enum
 import logging
 import math
 from time import process_time
-from typing import Collection, Iterable, Optional, Union
+from typing import Generic, Optional, Sequence, Tuple
 
 import numpy as np
 
-from metahopt.typing import RngSeed, ScoreFunc, SolutionType, VectorizedScoreFunc
+from metahopt.typing import (
+    RngSeed,
+    ScoreFunc,
+    SizedIterable,
+    SolutionType,
+    VectorizedScoreFunc,
+)
 
 
 class ScoringStopReason(Enum):
@@ -24,7 +30,7 @@ class ScoringStopReason(Enum):
 
 
 @dataclass(frozen=True)
-class ScoringResults:
+class ScoringResults(Generic[SolutionType]):
     """Results returned by a scoring function."""
 
     score: float
@@ -37,13 +43,13 @@ class ScoringResults:
 
 
 def _clean_score_params(
-    solutions: Union[Iterable[SolutionType], Collection[SolutionType]],
+    solutions: SizedIterable[SolutionType],
     max_time: Optional[float],
     max_eval: Optional[int],
     max_eval_ratio: Optional[float],
     random_order: bool,
     rng_seed: RngSeed,
-) -> (Iterable[SolutionType], Optional[float], Optional[int]):
+) -> Tuple[SizedIterable[SolutionType], Optional[float], Optional[int]]:
     """Validate and prepare the parameters of score_solutions().
 
     Args:
@@ -83,24 +89,22 @@ def _clean_score_params(
         if not 0.0 < max_eval_ratio <= 1.0:
             raise ValueError(f"max_eval_ratio={max_eval_ratio}, must be in ]0; 1]")
         n_sol = len(solutions)  # Requires the solutions iterable to have a len()
-        max_eval = min(
-            math.inf if max_eval is None else max_eval,
-            int(n_sol * max_eval_ratio),
-        )
+        n = int(n_sol * max_eval_ratio)
+        max_eval = n if max_eval is None else min(n, max_eval)
 
     return solutions, max_time, max_eval
 
 
 def score_solutions(
     score_func: ScoreFunc,
-    solutions: Iterable[SolutionType],
+    solutions: SizedIterable[SolutionType],
     max_time: Optional[float] = None,
     max_eval: Optional[int] = None,
     max_eval_ratio: Optional[float] = None,
     stop_score: Optional[float] = None,
     random_order: bool = False,
     rng_seed: RngSeed = None,
-) -> ScoringResults:
+) -> ScoringResults[SolutionType]:
     """Evaluate all solutions in a collection iteratively.
 
     Args:
@@ -180,10 +184,10 @@ def score_solutions(
 
 def score_vectorized(
     score_func: VectorizedScoreFunc,
-    solutions: Iterable[SolutionType],
+    solutions: Sequence[SolutionType],
     random_order: bool = False,
     rng_seed: RngSeed = None,
-) -> ScoringResults:
+) -> ScoringResults[SolutionType]:
     """Evaluate all solutions in a collection with a vectorized objective function.
 
     Args:
