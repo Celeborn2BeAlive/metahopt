@@ -1,4 +1,5 @@
 import math
+from typing import Tuple
 
 import pytest
 from pytest_mock import mock, MockerFixture
@@ -93,7 +94,7 @@ def test_score_solutions_clean_params_call(mocker: MockerFixture):
 
 
 @pytest.fixture
-def score_solutions_setup(mocker: MockerFixture) -> (mock.Mock, mock.Mock):
+def score_solutions_setup(mocker: MockerFixture) -> Tuple[mock.Mock, mock.Mock]:
     m_identity = mocker.Mock(side_effect=lambda x: x)  # Identity
     m_process_time = mocker.patch(
         "metahopt.scoring.process_time",
