@@ -1,3 +1,6 @@
+"""Primitives for local search.
+"""
+
 from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass, fields
@@ -120,16 +123,13 @@ class LocalSearch(metaclass=ABCMeta):
     def score_iter(
         self, state: LocalSearchState, polling_set: SizedIterable[SolutionType]
     ) -> ScoringResults:
-        random_order = self.poll_order is PollOrder.random
-        max_time = None if self.max_time is None else self.max_time - state.time
-        max_eval = None if self.max_calls is None else self.max_calls - state.n_calls
         return score_solutions(
             self._score_func_iter,
             polling_set,
-            max_time,
-            max_eval,
+            max_time=None if self.max_time is None else self.max_time - state.time,
+            max_eval=None if self.max_calls is None else self.max_calls - state.n_calls,
             stop_score=None if self.complete_poll else state.best_score,
-            random_order=random_order,
+            random_order=self.poll_order is PollOrder.random,
             rng_seed=self.rng_seed,
         )
 
@@ -152,6 +152,7 @@ class LocalSearch(metaclass=ABCMeta):
             best_score = scoring_res.score
             best_solution = scoring_res.solution
             success_direction = scoring_res.solution_index
+
         return LocalSearchState(
             params=self,
             best_score=best_score,
@@ -166,18 +167,19 @@ class LocalSearch(metaclass=ABCMeta):
         if self.min_score is not None and state.best_score < self.min_score:
             self._logger.debug("Stopping: reached score limit (%s)", self.min_score)
             return TerminationReason.min_score
-        if self.max_time is not None and state.time > self.max_time:
+        elif self.max_time is not None and state.time > self.max_time:
             self._logger.debug("Stopping: reached time limit (%s)", self.max_time)
             return TerminationReason.max_time
-        if self.max_iter is not None and state.n_iter >= self.max_iter:
+        elif self.max_iter is not None and state.n_iter >= self.max_iter:
             self._logger.debug("Stopping: reached max steps (%s)", self.max_iter)
             return TerminationReason.max_iter
-        if self.max_calls is not None and state.n_calls >= self.max_calls:
+        elif self.max_calls is not None and state.n_calls >= self.max_calls:
             self._logger.debug(
                 "Stopping: reached max score function calls (%s)", self.max_calls
             )
             return TerminationReason.max_calls
-        return None
+        else:
+            return None
 
     def solve(
         self, starting_point: SolutionType
