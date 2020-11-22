@@ -6,6 +6,17 @@ stages:
   - test
 
 
+lint:
+  stage: test
+  script:
+    - pip list
+    - pip install '.[test]'
+    - pip list
+    - black --check src tests
+    - flake8
+    - mypy
+
+
 tests:
   stage: test
   script:
