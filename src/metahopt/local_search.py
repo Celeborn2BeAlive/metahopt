@@ -68,7 +68,7 @@ class LocalSearch(metaclass=ABCMeta):
     #    less than func_tolerance
     #  * display, output callback
 
-    score_func: Union[ScoreFunc, VectorizedScoreFunc]
+    objective_func: Union[ScoreFunc, VectorizedScoreFunc]
     vectorized: bool = False
     max_time: Optional[float] = None
     max_iter: Optional[int] = None
@@ -85,15 +85,15 @@ class LocalSearch(metaclass=ABCMeta):
         self._logger = logging.getLogger("metahopt.solver")
 
         # Type hints
-        self._score_func_iter = cast(ScoreFunc, self.score_func)
-        self._score_func_vec = cast(VectorizedScoreFunc, self.score_func)
+        self._score_func_iter = cast(ScoreFunc, self.objective_func)
+        self._score_func_vec = cast(VectorizedScoreFunc, self.objective_func)
         self._neighborhood_func_vec = cast(
             Callable[[LocalSearchState], Sequence[SolutionType]],
-            self.get_polling_set,
+            self.neighborhood,
         )
         self._neighborhood_func_iter = cast(
             Callable[[LocalSearchState], SizedIterable[SolutionType]],
-            self.get_polling_set,
+            self.neighborhood,
         )
 
     def init_state(self, starting_point: SolutionType) -> LocalSearchState:
@@ -112,7 +112,7 @@ class LocalSearch(metaclass=ABCMeta):
         )
 
     @abstractmethod
-    def get_polling_set(
+    def neighborhood(
         self, state: LocalSearchState
     ) -> Union[SizedIterable[SolutionType], Sequence[SolutionType]]:
         """Generate neighborhood."""
@@ -183,7 +183,7 @@ class LocalSearch(metaclass=ABCMeta):
         self, starting_point: SolutionType
     ) -> Tuple[LocalSearchState, TerminationReason, List[ScoringResults]]:
         self._logger.info(
-            "Minimizing %r with %s", self.score_func, self.__class__.__name__
+            "Minimizing %r with %s", self.objective_func, self.__class__.__name__
         )
         stats = []
         start_time = process_time()

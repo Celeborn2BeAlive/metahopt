@@ -17,11 +17,11 @@ from metahopt.local_search import (
 class MyLocalSearch(LocalSearch):
     """Concrete LocalSearch, implementing abstract methods."""
 
-    def get_polling_set(self, state: LocalSearchState):
+    def neighborhood(self, state: LocalSearchState):
         return ["sol1", "sol2"]
 
 
-score_func = mock.sentinel.score_func
+score_func = mock.sentinel.objective_func
 state = mock.sentinel.state
 polling_set = mock.sentinel.polling_set
 rng_seed = mock.sentinel.rng_seed
