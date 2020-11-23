@@ -21,14 +21,14 @@ class MyLocalSearch(LocalSearch):
         return ["sol1", "sol2"]
 
 
-score_func = mock.sentinel.objective_func
+objective_func = mock.sentinel.objective_func
 state = mock.sentinel.state
-polling_set = mock.sentinel.polling_set
+neighborhood = mock.sentinel.neighborhood
 rng_seed = mock.sentinel.rng_seed
 
 
 def test_local_search_state():
-    solver = MyLocalSearch(score_func)
+    solver = MyLocalSearch(objective_func)
     state = LocalSearchState(
         solver, 1.0, "sol", time=2, n_iter=3, n_calls=4, success_direction=None
     )
@@ -36,12 +36,12 @@ def test_local_search_state():
 
 
 def test_local_search_init():
-    solver = MyLocalSearch(score_func, poll_order=PollOrder.success)
+    solver = MyLocalSearch(objective_func, poll_order=PollOrder.success)
     assert solver.poll_order is PollOrder.success
     assert isinstance(solver._logger, logging.Logger)
     assert solver._logger.name == "metahopt.solver"
 
-    solver = MyLocalSearch(score_func, poll_order="random")
+    solver = MyLocalSearch(objective_func, poll_order="random")
     assert solver.poll_order is PollOrder.random
 
 
@@ -56,38 +56,38 @@ def test_local_search_init_state():
 def test_local_search_score_vectorized(mocker: MockerFixture):
     m_score_vec = mocker.patch.object(mod, "score_vectorized")
 
-    solver = MyLocalSearch(score_func, vectorized=True, rng_seed=rng_seed)
-    assert solver.score_vectorized(state, polling_set) is m_score_vec.return_value
-    m_score_vec.assert_called_once_with(score_func, polling_set, False, rng_seed)
+    solver = MyLocalSearch(objective_func, vectorized=True, rng_seed=rng_seed)
+    assert solver.score_vectorized(state, neighborhood) is m_score_vec.return_value
+    m_score_vec.assert_called_once_with(objective_func, neighborhood, False, rng_seed)
 
     mocker.resetall()
     solver = MyLocalSearch(
-        score_func, vectorized=True, poll_order=PollOrder.random, rng_seed=rng_seed
+        objective_func, vectorized=True, poll_order=PollOrder.random, rng_seed=rng_seed
     )
-    assert solver.score_vectorized(state, polling_set) is m_score_vec.return_value
-    m_score_vec.assert_called_once_with(score_func, polling_set, True, rng_seed)
+    assert solver.score_vectorized(state, neighborhood) is m_score_vec.return_value
+    m_score_vec.assert_called_once_with(objective_func, neighborhood, True, rng_seed)
 
 
-def test_local_search_score_not_vectorized(mocker: MockerFixture):
+def test_local_search_score_iter(mocker: MockerFixture):
     m_score_solutions = mocker.patch.object(mod, "score_solutions")
     state = mocker.Mock(
         spec_set=["time", "n_calls", "best_score"], time=0, n_calls=0, best_score=0
     )
 
     solver = MyLocalSearch(
-        score_func,
+        objective_func,
         vectorized=False,
         max_time=None,
         max_calls=None,
         complete_poll=True,
         rng_seed=rng_seed,
     )
-    assert solver.score_iter(state, polling_set) is m_score_solutions.return_value
+    assert solver.score_iter(state, neighborhood) is m_score_solutions.return_value
     m_score_solutions.assert_called_once_with(
-        score_func,
-        polling_set,
-        None,
-        None,
+        objective_func,
+        neighborhood,
+        max_time=None,
+        max_eval=None,
         stop_score=None,
         random_order=False,
         rng_seed=rng_seed,
@@ -96,7 +96,7 @@ def test_local_search_score_not_vectorized(mocker: MockerFixture):
 
 def test_local_search_update(mocker: MockerFixture):
     mocker.patch("metahopt.local_search.process_time", return_value=1)
-    solver = MyLocalSearch(score_func)
+    solver = MyLocalSearch(objective_func)
     state = LocalSearchState(
         solver, 1.0, "sol1", time=3, n_iter=4, n_calls=4, success_direction=None
     )
@@ -121,7 +121,7 @@ def test_local_search_update(mocker: MockerFixture):
 
 
 def test_local_search_check_termination():
-    base_solver = MyLocalSearch(score_func)
+    base_solver = MyLocalSearch(objective_func)
     state = LocalSearchState(
         base_solver, 1.0, "sol", time=3, n_iter=4, n_calls=5, success_direction=None
     )
@@ -153,10 +153,10 @@ def test_local_search_check_termination():
 
 
 def test_local_search_solve_iter(mocker: MockerFixture):
-    def score_func(x):
+    def objective_func(x):
         return dict(sol0=3, sol1=1, sol2=2)[x]
 
-    solver = MyLocalSearch(score_func, max_iter=1)
+    solver = MyLocalSearch(objective_func, max_iter=1)
     end_state, term_reason, stats = solver.solve("sol0")
     assert end_state == LocalSearchState(solver, 1, "sol1", mocker.ANY, 1, 3, 0)
     assert term_reason is TerminationReason.max_iter
@@ -164,11 +164,11 @@ def test_local_search_solve_iter(mocker: MockerFixture):
 
 
 def test_local_search_solve_vectorized(mocker: MockerFixture):
-    def score_func(x):
+    def objective_func(x):
         d = dict(sol0=3, sol1=1, sol2=2)
         return [d[v] for v in x]
 
-    solver = MyLocalSearch(score_func, vectorized=True, max_iter=1)
+    solver = MyLocalSearch(objective_func, vectorized=True, max_iter=1)
     end_state, term_reason, stats = solver.solve("sol0")
     assert end_state == LocalSearchState(solver, 1, "sol1", mocker.ANY, 1, 2, 0)
     assert term_reason is TerminationReason.max_iter
