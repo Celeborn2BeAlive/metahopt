@@ -10,9 +10,9 @@ from numpy.random import BitGenerator, Generator, SeedSequence
 ArrayLike = TypeVar("ArrayLike", np.ndarray, list, tuple)
 Scalar = TypeVar("Scalar", int, float)
 
-SolutionType = TypeVar("SolutionType", bound=object)
-ScoreFunc = Callable[[SolutionType], float]
-VectorizedScoreFunc = Callable[[Iterable[SolutionType]], Sequence[float]]
+Solution = TypeVar("Solution", bound=object)
+ObjectiveFunc = Callable[[Solution], float]
+VectorizedObjectiveFunc = Callable[[Iterable[Solution]], Sequence[float]]
 RngSeed = Union[None, int, ArrayLike, SeedSequence, BitGenerator, Generator]
 
 

@@ -12,10 +12,10 @@ from typing import Callable, cast, Sequence, Tuple, Generic, List, Optional, Uni
 from metahopt.scoring import ScoringResults, score_solutions, score_vectorized
 from metahopt.typing import (
     RngSeed,
-    ScoreFunc,
+    ObjectiveFunc,
     SizedIterable,
-    SolutionType,
-    VectorizedScoreFunc,
+    Solution,
+    VectorizedObjectiveFunc,
 )
 
 
@@ -45,10 +45,10 @@ class TerminationReason(Enum):
 
 
 @dataclass
-class LocalSearchState(Generic[SolutionType]):
+class LocalSearchState(Generic[Solution]):
     params: LocalSearch
     best_score: float
-    best_solution: SolutionType
+    best_solution: Solution
     time: float
     n_iter: int
     # n_stall_iter: int  # TODO
@@ -71,7 +71,7 @@ class LocalSearch(metaclass=ABCMeta):
     #    less than func_tolerance
     #  * display, output callback
 
-    objective_func: Union[ScoreFunc, VectorizedScoreFunc]
+    objective_func: Union[ObjectiveFunc, VectorizedObjectiveFunc]
     vectorized: bool = False
     max_time: Optional[float] = None
     max_iter: Optional[int] = None
@@ -88,22 +88,22 @@ class LocalSearch(metaclass=ABCMeta):
         self._logger = logging.getLogger("metahopt.solver")
 
         # Type hints
-        self._score_func_iter = cast(ScoreFunc, self.objective_func)
-        self._score_func_vec = cast(VectorizedScoreFunc, self.objective_func)
+        self._objective_func_iter = cast(ObjectiveFunc, self.objective_func)
+        self._objective_func_vec = cast(VectorizedObjectiveFunc, self.objective_func)
         self._neighborhood_func_vec = cast(
-            Callable[[LocalSearchState], Sequence[SolutionType]],
+            Callable[[LocalSearchState], Sequence[Solution]],
             self.neighborhood,
         )
         self._neighborhood_func_iter = cast(
-            Callable[[LocalSearchState], SizedIterable[SolutionType]],
+            Callable[[LocalSearchState], SizedIterable[Solution]],
             self.neighborhood,
         )
 
-    def init_state(self, starting_point: SolutionType) -> LocalSearchState:
+    def init_state(self, starting_point: Solution) -> LocalSearchState:
         if self.vectorized:
-            init_score = self._score_func_vec([starting_point])[0]
+            init_score = self._objective_func_vec([starting_point])[0]
         else:
-            init_score = self._score_func_iter(starting_point)
+            init_score = self._objective_func_iter(starting_point)
         return LocalSearchState(
             params=self,
             best_score=init_score,
@@ -117,14 +117,14 @@ class LocalSearch(metaclass=ABCMeta):
     @abstractmethod
     def neighborhood(
         self, state: LocalSearchState
-    ) -> Union[SizedIterable[SolutionType], Sequence[SolutionType]]:
+    ) -> Union[SizedIterable[Solution], Sequence[Solution]]:
         """Generate neighborhood."""
 
     def score_iter(
-        self, state: LocalSearchState, polling_set: SizedIterable[SolutionType]
+        self, state: LocalSearchState, polling_set: SizedIterable[Solution]
     ) -> ScoringResults:
         return score_solutions(
-            self._score_func_iter,
+            self._objective_func_iter,
             polling_set,
             max_time=None if self.max_time is None else self.max_time - state.time,
             max_eval=None if self.max_calls is None else self.max_calls - state.n_calls,
@@ -134,11 +134,11 @@ class LocalSearch(metaclass=ABCMeta):
         )
 
     def score_vectorized(
-        self, state: LocalSearchState, polling_set: Sequence[SolutionType]
+        self, state: LocalSearchState, polling_set: Sequence[Solution]
     ) -> ScoringResults:
         random_order = self.poll_order is PollOrder.random
         return score_vectorized(
-            self._score_func_vec, polling_set, random_order, self.rng_seed
+            self._objective_func_vec, polling_set, random_order, self.rng_seed
         )
 
     def update(
@@ -182,7 +182,7 @@ class LocalSearch(metaclass=ABCMeta):
             return None
 
     def solve(
-        self, starting_point: SolutionType
+        self, starting_point: Solution
     ) -> Tuple[LocalSearchState, TerminationReason, List[ScoringResults]]:
         self._logger.info(
             "Minimizing %r with %s", self.objective_func, self.__class__.__name__
