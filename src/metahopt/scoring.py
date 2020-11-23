@@ -9,10 +9,10 @@ import numpy as np
 
 from metahopt.typing import (
     RngSeed,
-    ScoreFunc,
+    ObjectiveFunc,
     SizedIterable,
-    SolutionType,
-    VectorizedScoreFunc,
+    Solution,
+    VectorizedObjectiveFunc,
 )
 
 
@@ -30,11 +30,11 @@ class ScoringStopReason(Enum):
 
 
 @dataclass(frozen=True)
-class ScoringResults(Generic[SolutionType]):
+class ScoringResults(Generic[Solution]):
     """Results returned by a scoring function."""
 
     score: float
-    solution: Optional[SolutionType]
+    solution: Optional[Solution]
     solution_index: Optional[int]
     time: float
     n_eval: int
@@ -43,13 +43,13 @@ class ScoringResults(Generic[SolutionType]):
 
 
 def _clean_score_params(
-    solutions: SizedIterable[SolutionType],
+    solutions: SizedIterable[Solution],
     max_time: Optional[float],
     max_eval: Optional[int],
     max_eval_ratio: Optional[float],
     random_order: bool,
     rng_seed: RngSeed,
-) -> Tuple[SizedIterable[SolutionType], Optional[float], Optional[int]]:
+) -> Tuple[SizedIterable[Solution], Optional[float], Optional[int]]:
     """Validate and prepare the parameters of score_solutions().
 
     Args:
@@ -96,19 +96,19 @@ def _clean_score_params(
 
 
 def score_solutions(
-    score_func: ScoreFunc,
-    solutions: SizedIterable[SolutionType],
+    objective_func: ObjectiveFunc,
+    solutions: SizedIterable[Solution],
     max_time: Optional[float] = None,
     max_eval: Optional[int] = None,
     max_eval_ratio: Optional[float] = None,
     stop_score: Optional[float] = None,
     random_order: bool = False,
     rng_seed: RngSeed = None,
-) -> ScoringResults[SolutionType]:
+) -> ScoringResults[Solution]:
     """Evaluate all solutions in a collection iteratively.
 
     Args:
-        score_func (ScoreFunc): Objective function for evaluating solutions
+        objective_func (ObjectiveFunc): Objective function for evaluating solutions
             individually.
         solutions (iterable of SolutionType): Solution set to evaluate. Unless
             `max_eval_ratio` or `random_order` are specified, the only requirement is
@@ -167,7 +167,7 @@ def score_solutions(
             break
         # Solution evaluation
         logger.debug("[Iter %s] Evaluating solution %s", n_eval, sol)
-        score = score_func(sol)
+        score = objective_func(sol)
         n_eval += 1
         if score < best_score:
             best_score = score
@@ -183,16 +183,16 @@ def score_solutions(
 
 
 def score_vectorized(
-    score_func: VectorizedScoreFunc,
-    solutions: Sequence[SolutionType],
+    objective_func: VectorizedObjectiveFunc,
+    solutions: Sequence[Solution],
     random_order: bool = False,
     rng_seed: RngSeed = None,
-) -> ScoringResults[SolutionType]:
+) -> ScoringResults[Solution]:
     """Evaluate all solutions in a collection with a vectorized objective function.
 
     Args:
-        score_func (VectorizedScoreFunc): Vectorized objective function for evaluating
-            a collection of solutions in a single call.
+        objective_func (VectorizedObjectiveFunc): Vectorized objective function for
+            evaluating a collection of solutions in a single call.
         solutions (iterable of SolutionType): Solution set to evaluate.
         random_order (bool, optional, default False): If True, the solution set is
             shuffled. This triggers the generation of the complete solution set if it
@@ -210,7 +210,7 @@ def score_vectorized(
     if random_order:
         solutions = np.random.default_rng(rng_seed).permutation(solutions)
 
-    scores = np.asanyarray(score_func(solutions))
+    scores = np.asanyarray(objective_func(solutions))
     best_idx: int = np.argmin(scores)
     best_score = scores[best_idx]
     best_solution = solutions[best_idx]

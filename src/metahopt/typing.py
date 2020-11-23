@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Callable, Generic, Iterable, Sized, TypeVar, Union
+from typing import Callable, Generic, Iterable, Sequence, Sized, TypeVar, Union
 
 import numpy as np
 from numpy.random import BitGenerator, Generator, SeedSequence
@@ -9,10 +9,10 @@ from numpy.random import BitGenerator, Generator, SeedSequence
 #  it is released.
 ArrayLike = TypeVar("ArrayLike", np.ndarray, list, tuple)
 Scalar = TypeVar("Scalar", int, float)
-SolutionType = TypeVar("SolutionType", int, float, list, tuple, np.ndarray)
 
-ScoreFunc = Callable[[SolutionType], float]
-VectorizedScoreFunc = Callable[[Iterable[SolutionType]], Iterable[float]]
+Solution = TypeVar("Solution", bound=object)
+ObjectiveFunc = Callable[[Solution], float]
+VectorizedObjectiveFunc = Callable[[Iterable[Solution]], Sequence[float]]
 RngSeed = Union[None, int, ArrayLike, SeedSequence, BitGenerator, Generator]
 
 
