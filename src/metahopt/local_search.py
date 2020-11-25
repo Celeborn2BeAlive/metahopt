@@ -167,19 +167,18 @@ class LocalSearch(metaclass=ABCMeta):
         if self.min_score is not None and state.best_score < self.min_score:
             self._logger.debug("Stopping: reached score limit (%s)", self.min_score)
             return TerminationReason.min_score
-        elif self.max_time is not None and state.time > self.max_time:
+        if self.max_time is not None and state.time > self.max_time:
             self._logger.debug("Stopping: reached time limit (%s)", self.max_time)
             return TerminationReason.max_time
-        elif self.max_iter is not None and state.n_iter >= self.max_iter:
-            self._logger.debug("Stopping: reached max steps (%s)", self.max_iter)
+        if self.max_iter is not None and state.n_iter >= self.max_iter:
+            self._logger.debug("Stopping: reached max iterations (%s)", self.max_iter)
             return TerminationReason.max_iter
-        elif self.max_calls is not None and state.n_calls >= self.max_calls:
+        if self.max_calls is not None and state.n_calls >= self.max_calls:
             self._logger.debug(
-                "Stopping: reached max score function calls (%s)", self.max_calls
+                "Stopping: reached max objective function calls (%s)", self.max_calls
             )
             return TerminationReason.max_calls
-        else:
-            return None
+        return None
 
     def solve(
         self, starting_point: Solution
