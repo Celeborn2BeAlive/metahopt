@@ -1,17 +1,17 @@
-from dataclasses import replace
 import logging
+from dataclasses import replace
 from unittest import mock
 
-from metahopt.scoring import ScoringResults, ScoringStopReason
 from pytest_mock import MockerFixture
 
 import metahopt.local_search as mod
 from metahopt.local_search import (
-    PollOrder,
     LocalSearch,
     LocalSearchState,
+    PollOrder,
     TerminationReason,
 )
+from metahopt.scoring import ScoringResults, ScoringStopReason
 
 
 class MyLocalSearch(LocalSearch):
@@ -165,7 +165,7 @@ def test_local_search_solve_iter(mocker: MockerFixture):
 
 def test_local_search_solve_vectorized(mocker: MockerFixture):
     def objective_func(x):
-        d = dict(sol0=3, sol1=1, sol2=2)
+        d = {"sol0": 3, "sol1": 1, "sol2": 2}
         return [d[v] for v in x]
 
     solver = MyLocalSearch(objective_func, vectorized=True, max_iter=1)

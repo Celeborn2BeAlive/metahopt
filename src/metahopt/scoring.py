@@ -1,15 +1,15 @@
-from dataclasses import dataclass
-from enum import Enum
 import logging
 import math
+from dataclasses import dataclass
+from enum import Enum
 from time import process_time
 from typing import Generic, Optional, Sequence, Tuple
 
 import numpy as np
 
 from metahopt.typing import (
-    RngSeed,
     ObjectiveFunc,
+    RngSeed,
     SizedIterable,
     Solution,
     VectorizedObjectiveFunc,
@@ -75,10 +75,12 @@ def _clean_score_params(
         values for `solutions`, `max_time` and `max_eval`.
     """
     if max_time is not None and max_time <= 0.0:
-        raise ValueError(f"max_time={max_time}, must be greater than 0")
+        msg = f"max_time={max_time}, must be greater than 0"
+        raise ValueError(msg)
 
     if max_eval is not None and max_eval < 1:
-        raise ValueError(f"max_eval={max_eval}, must be greater than or equal to 1")
+        msg = f"max_eval={max_eval}, must be greater than or equal to 1"
+        raise ValueError(msg)
 
     # Randomize solutions iterable before max_eval_ratio
     # If solutions is a generator it is materialized at this point
@@ -87,7 +89,8 @@ def _clean_score_params(
 
     if max_eval_ratio is not None:
         if not 0.0 < max_eval_ratio <= 1.0:
-            raise ValueError(f"max_eval_ratio={max_eval_ratio}, must be in ]0; 1]")
+            msg = f"max_eval_ratio={max_eval_ratio}, must be in ]0; 1]"
+            raise ValueError(msg)
         n_sol = len(solutions)  # Requires the solutions iterable to have a len()
         n = int(n_sol * max_eval_ratio)
         max_eval = n if max_eval is None else min(n, max_eval)

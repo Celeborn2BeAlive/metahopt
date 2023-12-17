@@ -2,17 +2,18 @@
 """
 
 from __future__ import annotations
+
+import logging
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass, fields
 from enum import Enum
-import logging
 from time import process_time
-from typing import Callable, cast, Sequence, Tuple, Generic, List, Optional, Union
+from typing import Callable, Generic, Sequence, cast
 
 from metahopt.scoring import ScoringResults, score_solutions, score_vectorized
 from metahopt.typing import (
-    RngSeed,
     ObjectiveFunc,
+    RngSeed,
     SizedIterable,
     Solution,
     VectorizedObjectiveFunc,
@@ -53,7 +54,7 @@ class LocalSearchState(Generic[Solution]):
     n_iter: int
     # n_stall_iter: int  # TODO
     n_calls: int
-    success_direction: Optional[int]
+    success_direction: int | None
 
     @classmethod
     def from_base_state(cls, state: LocalSearchState, *args, **kwargs):
@@ -71,12 +72,12 @@ class LocalSearch(metaclass=ABCMeta):
     #    less than func_tolerance
     #  * display, output callback
 
-    objective_func: Union[ObjectiveFunc, VectorizedObjectiveFunc]
+    objective_func: ObjectiveFunc | VectorizedObjectiveFunc
     vectorized: bool = False
-    max_time: Optional[float] = None
-    max_iter: Optional[int] = None
-    max_calls: Optional[int] = None
-    min_score: Optional[float] = None
+    max_time: float | None = None
+    max_iter: int | None = None
+    max_calls: int | None = None
+    min_score: float | None = None
     poll_order: PollOrder = PollOrder.consecutive
     complete_poll: bool = True
     rng_seed: RngSeed = None
@@ -117,7 +118,7 @@ class LocalSearch(metaclass=ABCMeta):
     @abstractmethod
     def neighborhood(
         self, state: LocalSearchState
-    ) -> Union[SizedIterable[Solution], Sequence[Solution]]:
+    ) -> SizedIterable[Solution] | Sequence[Solution]:
         """Generate neighborhood."""
 
     def score_iter(
@@ -163,7 +164,7 @@ class LocalSearch(metaclass=ABCMeta):
             success_direction=success_direction,
         )
 
-    def check_termination(self, state: LocalSearchState) -> Optional[TerminationReason]:
+    def check_termination(self, state: LocalSearchState) -> TerminationReason | None:
         if self.min_score is not None and state.best_score < self.min_score:
             self._logger.debug("Stopping: reached score limit (%s)", self.min_score)
             return TerminationReason.min_score
@@ -182,7 +183,7 @@ class LocalSearch(metaclass=ABCMeta):
 
     def solve(
         self, starting_point: Solution
-    ) -> Tuple[LocalSearchState, TerminationReason, List[ScoringResults]]:
+    ) -> tuple[LocalSearchState, TerminationReason, list[ScoringResults]]:
         self._logger.info(
             "Minimizing %r with %s", self.objective_func, self.__class__.__name__
         )

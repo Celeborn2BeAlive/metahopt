@@ -1,15 +1,16 @@
 import math
 from typing import Tuple
+from unittest import mock
 
 import pytest
-from pytest_mock import mock, MockerFixture
+from pytest_mock import MockerFixture
 
 from metahopt.scoring import (
+    ScoringResults,
+    ScoringStopReason,
     _clean_score_params,
     score_solutions,
     score_vectorized,
-    ScoringResults,
-    ScoringStopReason,
 )
 
 
@@ -79,7 +80,7 @@ def test_score_solutions_clean_params_call(mocker: MockerFixture):
         return_value=(["sol"], None, None),
     )
     score_solutions(
-        lambda x: 0,
+        lambda _x: 0,
         solutions,
         max_time,
         max_eval,
