@@ -17,7 +17,7 @@ from metahopt.scoring import ScoringResults, ScoringStopReason
 class MyLocalSearch(LocalSearch):
     """Concrete LocalSearch, implementing abstract methods."""
 
-    def poll_set_vectorized(self, state: LocalSearchState):
+    def poll_set_vectorized(self, _state: LocalSearchState):
         return ["sol1", "sol2"]
 
 

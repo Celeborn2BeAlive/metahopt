@@ -5,10 +5,11 @@ from __future__ import annotations
 
 import logging
 from abc import ABCMeta, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
 from time import process_time
-from typing import Generic, Sequence, cast
+from typing import Generic, cast
 
 from metahopt.scoring import ScoringResults, score_solutions, score_vectorized
 from metahopt.typing import (
@@ -169,7 +170,7 @@ class LocalSearch(metaclass=ABCMeta):
         )
 
     def score_vectorized(
-        self, state: LocalSearchState, polling_set: Sequence[Solution]
+        self, state: LocalSearchState, polling_set: Sequence[Solution]  # noqa: ARG002
     ) -> ScoringResults:
         random_order = self.poll_order is PollOrder.Random
         return score_vectorized(

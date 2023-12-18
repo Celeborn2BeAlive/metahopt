@@ -1,9 +1,10 @@
 import logging
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
 from time import process_time
-from typing import Generic, Optional, Sequence, Tuple
+from typing import Generic
 
 import numpy as np
 
@@ -35,8 +36,8 @@ class ScoringResults(Generic[Solution]):
     """Results returned by a scoring function."""
 
     score: float
-    solution: Optional[Solution]
-    solution_index: Optional[int]
+    solution: Solution | None
+    solution_index: int | None
     time: float
     n_eval: int
     n_calls: int
@@ -45,13 +46,13 @@ class ScoringResults(Generic[Solution]):
 
 def _clean_score_params(
     solutions: SizedIterable[Solution],
-    max_time: Optional[float],
-    max_eval: Optional[int],
-    max_eval_ratio: Optional[float],
+    max_time: float | None,
+    max_eval: int | None,
+    max_eval_ratio: float | None,
     *,
     random_order: bool,
     rng_seed: RngSeed,
-) -> Tuple[SizedIterable[Solution], Optional[float], Optional[int]]:
+) -> tuple[SizedIterable[Solution], float | None, int | None]:
     """Validate and prepare the parameters of score_solutions().
 
     Args:
@@ -103,10 +104,10 @@ def _clean_score_params(
 def score_solutions(
     objective_func: ObjectiveFunc,
     solutions: SizedIterable[Solution],
-    max_time: Optional[float] = None,
-    max_eval: Optional[int] = None,
-    max_eval_ratio: Optional[float] = None,
-    stop_score: Optional[float] = None,
+    max_time: float | None = None,
+    max_eval: int | None = None,
+    max_eval_ratio: float | None = None,
+    stop_score: float | None = None,
     *,
     random_order: bool = False,
     rng_seed: RngSeed = None,
