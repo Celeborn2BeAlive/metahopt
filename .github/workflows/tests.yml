@@ -1,0 +1,36 @@
+name: Tests
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      - name: Install Hatch
+        run: |
+          python -m pip install --upgrade pip 
+          pip install hatch
+      - name: Install dependencies
+        run: hatch -v run pip list
+      - name: Lint
+        run: hatch run lint:style
+      - name: Run tests
+        run: |
+          hatch run cov -v tests
+          hatch run coverage xml
+      - name: Report coverage
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: orgoro/coverage@v3.1
+        with:
+            coverageFile: coverage.xml
+            token: ${{ secrets.GITHUB_TOKEN }}

@@ -19,51 +19,65 @@ def test_clean_score_params(mocker):
     rng_seed = mocker.sentinel.rng_seed
 
     # All default
-    res = _clean_score_params(solutions, None, None, None, False, rng_seed)
+    res = _clean_score_params(
+        solutions, None, None, None, random_order=False, rng_seed=rng_seed
+    )
     assert res == (solutions, None, None)
 
     # With max_time
-    res = _clean_score_params(solutions, 12, None, None, False, rng_seed)
+    res = _clean_score_params(
+        solutions, 12, None, None, random_order=False, rng_seed=rng_seed
+    )
     assert res == (solutions, 12, None)
 
     # With max_eval
-    res = _clean_score_params(solutions, None, 2, None, False, rng_seed)
+    res = _clean_score_params(
+        solutions, None, 2, None, random_order=False, rng_seed=rng_seed
+    )
     assert res == (solutions, None, 2)
 
     # With max_eval_ratio
-    res = _clean_score_params([0, 1], None, None, 0.5, False, rng_seed)
+    res = _clean_score_params(
+        [0, 1], None, None, 0.5, random_order=False, rng_seed=rng_seed
+    )
     assert res == ([0, 1], None, 1)
 
     # With max_eval and max_eval_ratio
     sols = range(10)
-    res = _clean_score_params(sols, None, 2, 0.5, False, rng_seed)
+    res = _clean_score_params(sols, None, 2, 0.5, random_order=False, rng_seed=rng_seed)
     assert res == (sols, None, 2)
 
     # With max_eval, max_eval_ratio and an empty solution set
-    assert _clean_score_params([], None, 2, 0.5, False, rng_seed) == ([], None, 0)
+    assert _clean_score_params(
+        [], None, 2, 0.5, random_order=False, rng_seed=rng_seed
+    ) == ([], None, 0)
 
     # Random order
     m_default_rng = mocker.patch("numpy.random.default_rng")
-    res = _clean_score_params(solutions, None, None, None, True, rng_seed)
+    res = _clean_score_params(
+        solutions, None, None, None, random_order=True, rng_seed=rng_seed
+    )
     assert res == (m_default_rng.return_value.permutation.return_value, None, None)
     m_default_rng.assert_called_once_with(rng_seed)
     m_default_rng.return_value.permutation.assert_called_once_with(solutions)
 
     with pytest.raises(ValueError, match="max_time=0"):
-        _clean_score_params([], 0, 0, None, False, rng_seed)
+        _clean_score_params([], 0, 0, None, random_order=False, rng_seed=rng_seed)
 
     with pytest.raises(ValueError, match="max_eval=0"):
-        _clean_score_params([], None, 0, None, False, rng_seed)
+        _clean_score_params([], None, 0, None, random_order=False, rng_seed=rng_seed)
 
     with pytest.raises(ValueError, match="max_eval_ratio=0"):
-        _clean_score_params([], None, None, 0, False, rng_seed)
+        _clean_score_params([], None, None, 0, random_order=False, rng_seed=rng_seed)
 
     with pytest.raises(ValueError, match="max_eval_ratio=2"):
-        _clean_score_params([], None, None, 2, False, rng_seed)
+        _clean_score_params([], None, None, 2, random_order=False, rng_seed=rng_seed)
 
     # Error if specifying max_eval_ratio with an iterable that has no len()
     with pytest.raises(TypeError, match="object of type 'generator' has no len()"):
-        _clean_score_params((x for x in [0, 1]), None, None, 0.5, False, rng_seed)
+        _clean_score_params(
+            (x for x in [0, 1]), None, None, 0.5, random_order=False, rng_seed=rng_seed
+        )
 
 
 def test_score_solutions_clean_params_call(mocker: MockerFixture):
@@ -86,11 +100,16 @@ def test_score_solutions_clean_params_call(mocker: MockerFixture):
         max_eval,
         max_eval_ratio,
         None,
-        random_order,
-        rng_seed,
+        random_order=random_order,
+        rng_seed=rng_seed,
     )
     m_clean_score_params.assert_called_once_with(
-        solutions, max_time, max_eval, max_eval_ratio, random_order, rng_seed
+        solutions,
+        max_time,
+        max_eval,
+        max_eval_ratio,
+        random_order=random_order,
+        rng_seed=rng_seed,
     )
 
 
@@ -230,7 +249,9 @@ def test_score_vectorized_random_order(mocker: MockerFixture, score_solutions_se
     solutions = mocker.sentinel.solutions
     rng_seed = mocker.sentinel.rng_seed
 
-    assert score_vectorized(m_identity, solutions, True, rng_seed) == ScoringResults(
+    assert score_vectorized(
+        m_identity, solutions, random_order=True, rng_seed=rng_seed
+    ) == ScoringResults(
         score=0,
         solution=0,
         solution_index=1,

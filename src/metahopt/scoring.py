@@ -14,6 +14,7 @@ from metahopt.typing import (
     Solution,
     VectorizedObjectiveFunc,
 )
+from metahopt.utils import format_time
 
 
 class ScoringStopReason(Enum):
@@ -47,6 +48,7 @@ def _clean_score_params(
     max_time: Optional[float],
     max_eval: Optional[int],
     max_eval_ratio: Optional[float],
+    *,
     random_order: bool,
     rng_seed: RngSeed,
 ) -> Tuple[SizedIterable[Solution], Optional[float], Optional[int]]:
@@ -74,7 +76,7 @@ def _clean_score_params(
         iterable of SolutionType, float or None, int or None: Validated and prepared
         values for `solutions`, `max_time` and `max_eval`.
     """
-    if max_time is not None and max_time <= 0.0:
+    if max_time is not None and max_time <= 0:
         msg = f"max_time={max_time}, must be greater than 0"
         raise ValueError(msg)
 
@@ -88,7 +90,7 @@ def _clean_score_params(
         solutions = np.random.default_rng(rng_seed).permutation(solutions)
 
     if max_eval_ratio is not None:
-        if not 0.0 < max_eval_ratio <= 1.0:
+        if not 0 < max_eval_ratio <= 1:
             msg = f"max_eval_ratio={max_eval_ratio}, must be in ]0; 1]"
             raise ValueError(msg)
         n_sol = len(solutions)  # Requires the solutions iterable to have a len()
@@ -105,6 +107,7 @@ def score_solutions(
     max_eval: Optional[int] = None,
     max_eval_ratio: Optional[float] = None,
     stop_score: Optional[float] = None,
+    *,
     random_order: bool = False,
     rng_seed: RngSeed = None,
 ) -> ScoringResults[Solution]:
@@ -142,7 +145,12 @@ def score_solutions(
     start_time = process_time()  # Before randomization to include it in timing
 
     solutions, max_time, max_eval = _clean_score_params(
-        solutions, max_time, max_eval, max_eval_ratio, random_order, rng_seed
+        solutions,
+        max_time,
+        max_eval,
+        max_eval_ratio,
+        random_order=random_order,
+        rng_seed=rng_seed,
     )
 
     # Initialization
@@ -188,6 +196,7 @@ def score_solutions(
 def score_vectorized(
     objective_func: VectorizedObjectiveFunc,
     solutions: Sequence[Solution],
+    *,
     random_order: bool = False,
     rng_seed: RngSeed = None,
 ) -> ScoringResults[Solution]:
@@ -219,7 +228,7 @@ def score_vectorized(
     best_solution = solutions[best_idx]
 
     scoring_time = process_time() - start_time
-    logger.info("Scored %s solutions in %.3f s", len(scores), scoring_time)
+    logger.info("Scored %s solutions in %s", len(scores), format_time(scoring_time))
     return ScoringResults(
         best_score,
         best_solution,
