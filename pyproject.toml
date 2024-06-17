@@ -32,7 +32,7 @@ dependencies = ["numpy"]
 
 [project.urls]
 Documentation = "https://github.com/alex-marty/metahopt"
-Issues = "https://github.com/alex-marty/metahopt/-/issues"
+Issues = "https://github.com/alex-marty/metahopt/issues"
 Source = "https://github.com/alex-marty/metahopt"
 
 [tool.hatch.version]

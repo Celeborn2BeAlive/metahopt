@@ -67,7 +67,9 @@ class LocalSearchState(Generic[Solution]):
     n_stalled_calls: int
     success_direction: int | None
 
-    def update(self, scoring_res: ScoringResults, start_time: float) -> LocalSearchState:
+    def update(
+        self, scoring_res: ScoringResults, start_time: float
+    ) -> LocalSearchState[Solution]:
         # Score improved
         if scoring_res.score < self.best_score:
             best_score = scoring_res.score
@@ -83,7 +85,7 @@ class LocalSearchState(Generic[Solution]):
             n_stalled_iter = self.n_stalled_iter + 1
             n_stalled_calls = self.n_stalled_calls + scoring_res.n_calls
 
-        return LocalSearchState(
+        return LocalSearchState[Solution](
             best_score=best_score,
             best_solution=best_solution,
             time=process_time() - start_time,
@@ -103,7 +105,7 @@ class LocalSearchResults(Generic[Solution]):
 
 
 @dataclass(kw_only=True)  # type: ignore  # https://github.com/python/mypy/issues/5374
-class LocalSearch(metaclass=ABCMeta):
+class LocalSearch(Generic[Solution], metaclass=ABCMeta):
     # TODO: Add:
     #  * cache?
     #  * parallelization
@@ -132,12 +134,12 @@ class LocalSearch(metaclass=ABCMeta):
         self._objective_iter = cast(ObjectiveFunc, self.objective)
         self._objective_vec = cast(VectorizedObjectiveFunc, self.objective)
 
-    def init_state(self, starting_point: Solution) -> LocalSearchState:
+    def init_state(self, starting_point: Solution) -> LocalSearchState[Solution]:
         if self.vectorized:
             init_score = self._objective_vec([starting_point])[0]
         else:
             init_score = self._objective_iter(starting_point)
-        return LocalSearchState(
+        return LocalSearchState[Solution](
             best_score=init_score,
             best_solution=starting_point,
             time=0,
@@ -148,16 +150,18 @@ class LocalSearch(metaclass=ABCMeta):
             success_direction=None,
         )
 
-    def poll_set_iter(self, state: LocalSearchState) -> SizedIterable[Solution]:
+    def poll_set_iter(self, state: LocalSearchState[Solution]) -> SizedIterable[Solution]:
         """Generate neighborhood."""
         return self.poll_set_vectorized(state)
 
     @abstractmethod
-    def poll_set_vectorized(self, state: LocalSearchState) -> Sequence[Solution]:
+    def poll_set_vectorized(
+        self, state: LocalSearchState[Solution]
+    ) -> Sequence[Solution]:
         """Generate neighborhood."""
 
     def score_iter(
-        self, state: LocalSearchState, polling_set: SizedIterable[Solution]
+        self, state: LocalSearchState[Solution], polling_set: SizedIterable[Solution]
     ) -> ScoringResults:
         return score_solutions(
             self._objective_iter,
@@ -170,7 +174,9 @@ class LocalSearch(metaclass=ABCMeta):
         )
 
     def score_vectorized(
-        self, state: LocalSearchState, polling_set: Sequence[Solution]  # noqa: ARG002
+        self,
+        state: LocalSearchState[Solution],  # noqa: ARG002
+        polling_set: Sequence[Solution],
     ) -> ScoringResults:
         random_order = self.poll_order is PollOrder.Random
         return score_vectorized(
@@ -180,7 +186,9 @@ class LocalSearch(metaclass=ABCMeta):
             rng_seed=self.rng_seed,
         )
 
-    def check_termination(self, state: LocalSearchState) -> TerminationReason | None:
+    def check_termination(
+        self, state: LocalSearchState[Solution]
+    ) -> TerminationReason | None:
         if self.min_score is not None and state.best_score < self.min_score:
             self._logger.debug("Stopping: reached score limit (%s)", self.min_score)
             return TerminationReason.MinScore

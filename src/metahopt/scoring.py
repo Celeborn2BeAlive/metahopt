@@ -188,7 +188,7 @@ def score_solutions(
 
     # Finalization
     scoring_time = process_time() - start_time
-    logger.info("Scored %s solutions in %.3f s", n_eval, scoring_time)
+    logger.info("Scored %s solutions in %s", n_eval, format_time(scoring_time))
     return ScoringResults(
         best_score, best_sol, best_idx, scoring_time, n_eval, n_eval, stop_reason
     )
