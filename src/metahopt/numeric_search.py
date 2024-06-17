@@ -4,7 +4,6 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 from metahopt.local_search import LocalSearch, LocalSearchResults, LocalSearchState
-from metahopt.typing import Solution
 
 
 BoundT = float | int | None
@@ -43,7 +42,7 @@ class NumericLocalSearch(LocalSearch[np.ndarray]):
 
 
 @dataclass(kw_only=True)
-class IntCoordinateSearch(NumericLocalSearch[NDArray[np.int_]]):
+class IntCoordinateSearch(NumericLocalSearch):
     max_stalled_iter: int = field(default=1, init=False)
 
     def poll_set_vectorized(self, state: LocalSearchState) -> NDArray[np.int_]:
