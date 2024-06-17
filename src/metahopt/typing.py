@@ -20,5 +20,4 @@ RngSeed = None | int | ArrayLike | SeedSequence | BitGenerator | Generator
 _T = TypeVar("_T")
 
 
-class SizedIterable(Iterable[_T], Sized, Generic[_T], metaclass=ABCMeta):
-    ...
+class SizedIterable(Iterable[_T], Sized, Generic[_T], metaclass=ABCMeta): ...

@@ -1,5 +1,6 @@
 """Examples of objective functions.
 """
+
 import numpy as np
 
 from metahopt.typing import ArrayLike
