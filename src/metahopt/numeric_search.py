@@ -4,7 +4,6 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 from metahopt.local_search import LocalSearch, LocalSearchResults, LocalSearchState
-from metahopt.typing import Solution
 
 
 BoundT = float | int | None
