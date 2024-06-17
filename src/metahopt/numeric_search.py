@@ -43,7 +43,7 @@ class NumericLocalSearch(LocalSearch[np.ndarray]):
 
 
 @dataclass(kw_only=True)
-class IntCoordinateSearch(NumericLocalSearch[NDArray[np.int_]]):
+class IntCoordinateSearch(NumericLocalSearch):
     max_stalled_iter: int = field(default=1, init=False)
 
     def poll_set_vectorized(self, state: LocalSearchState) -> NDArray[np.int_]:
